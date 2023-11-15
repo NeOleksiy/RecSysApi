@@ -8,18 +8,22 @@ class Gender(models.TextChoices):
 
 
 class User(AbstractUser):
-    username = models.CharField(max_length=32,unique=True)
-    email = models.CharField(max_length=64)
+    user_id = models.IntegerField(primary_key=True, unique=True)
+    user_name = models.CharField(max_length=32, default='Radislav')
+    email = models.EmailField(max_length=64, default='nikto@gmail.com')
 
     def __str__(self):
-        return self.username
+        return f'{self.user_id}'
 
 
 class UserAttribute(models.Model):
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
-    age = models.PositiveSmallIntegerField()
-    gender = models.CharField(max_length=1, choices=Gender.choices)
+    age = models.PositiveSmallIntegerField(default=22)
+    gender = models.CharField(max_length=1, choices=Gender.choices, default='M')
 
     def __str__(self):
-        return self.user
+        return self.user.user_name
+
+
+
 
