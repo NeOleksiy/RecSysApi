@@ -91,7 +91,8 @@ class Similar_users(APIView):
 
         data = {
             'user_id': user_id,
-            'anime_rated': len(ratings),
+            'anime_rated': len(users[user_id]),
+            'anime': users[user_id].keys(),
             'type': sim_method,
             'topn': topn,
             'similarity': topn,

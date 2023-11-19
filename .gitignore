@@ -1,4 +1,4 @@
 # created by virtualenv automatically
-RecSystem/.env
-anime.csv
-rating.csv
+./RecSystem/.env
+./anime.csv
+./rating.csv

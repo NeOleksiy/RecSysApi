@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-
+# Модель пользователя и их атрибуты
 class Gender(models.TextChoices):
     MALE = 'M', 'Мужской'
     FEMALE = 'F', 'Женский'

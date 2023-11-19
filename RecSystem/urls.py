@@ -16,7 +16,8 @@ schema_view = get_schema_view(  # new
     ),
     # url=f'{settings.APP_URL}/api/v3/',
     patterns=[path('api/', include('users.urls')),
-              path('rec/', include('recommender.urls'))],
+              path('rec/', include('recommender.urls')),
+              path('collect/', include('collector.urls'))],
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
@@ -33,5 +34,6 @@ urlpatterns = [
         schema_view.without_ui(cache_timeout=0),
         name='schema-json'),
     path('api/', include('users.urls')),
-    path('rec/', include('recommender.urls'))
+    path('rec/', include('recommender.urls')),
+    path('collect/', include('collector.urls'))
 ]
