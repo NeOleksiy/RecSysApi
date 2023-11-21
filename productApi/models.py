@@ -37,6 +37,13 @@ class UserRating(models.Model):
     anime_id = models.ForeignKey(to=Anime, on_delete=models.CASCADE)
     rating = models.SmallIntegerField(default=-1)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_id', 'anime_id'], name='user_anime_rating'
+            )
+        ]
+
     def __str__(self):
         return f'{self.anime_id} with rating {self.rating}'
 
