@@ -19,7 +19,7 @@ class Genre(models.Model):
 
 # Сам продукт(в нашем слуае аниме)
 class Anime(models.Model):
-    anime_id = models.PositiveIntegerField(primary_key=True)
+    anime_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=300)
     genre = models.ManyToManyField(to=Genre, blank=True, related_name='genres')
     type = models.CharField(max_length=8, choices=Type.choices)
@@ -35,7 +35,7 @@ class Anime(models.Model):
 class UserRating(models.Model):
     user_id = models.ForeignKey(to=User, on_delete=models.CASCADE)
     anime_id = models.ForeignKey(to=Anime, on_delete=models.CASCADE)
-    rating = models.SmallIntegerField(default=-1)
+    rating = models.SmallIntegerField(default=-1)  # Если рейтинг равен -1, значит пользователь посмотрел, но не оценил
 
     class Meta:
         constraints = [
@@ -56,15 +56,3 @@ class Cluster(models.Model):
     def __str__(self):
         return "User {} in cluster {}".format(self.user_id, self.cluster_id)
 
-
-# Список просмотренных
-class WatchedList(models.Model):
-    user_id = models.ForeignKey(to=User, on_delete=models.CASCADE)
-    watch_list = models.JSONField(default=dict, blank=True, null=True)
-
-    def __str__(self):
-        return "User {} list {}".format(self.user_id, self.watch_list)
-
-    @classmethod
-    def add_in_scheduled(cls, anime_id):
-        WatchedList.watch_list[anime_id] = 'not viewed'

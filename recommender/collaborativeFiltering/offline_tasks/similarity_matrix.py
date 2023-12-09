@@ -22,7 +22,7 @@ logger = logging.getLogger('Item simialarity calculator')
 
 class ItemSimilarityMatrixBuilder(object):
 
-    def __init__(self, min_overlap=15, min_sim=0.2):
+    def __init__(self, min_overlap=10, min_sim=0.2):
         self.min_overlap = min_overlap
         self.min_sim = min_sim
         self.db = settings.DATABASES['default']['ENGINE']
@@ -58,16 +58,14 @@ class ItemSimilarityMatrixBuilder(object):
 
         sparsity_level = 1 - (ratings.shape[0] / (coo.shape[0] * coo.shape[1]))
         logger.info("Sparsity level is {}".format(sparsity_level))
-
         start_time = datetime.now()
         cor = cosine_similarity(coo, dense_output=False)
         # cor = rp.corr(method='pearson', min_periods=self.min_overlap)
         # cor = (cosine(rp.T))
-
         cor = cor.multiply(cor > self.min_sim)
         cor = cor.multiply(overlap_matrix > self.min_overlap)
-
         anime_list = dict(enumerate(ratings['anime_id'].cat.categories))
+        print(cor, anime_list)
         logger.info('Correlation is finished, done in {} seconds'.format(datetime.now() - start_time))
         if save:
 
@@ -123,7 +121,7 @@ def main():
     logger.info("Calculation of item similarity")
 
     all_ratings = load_all_ratings()
-    ItemSimilarityMatrixBuilder(min_overlap=20, min_sim=0.0).build(all_ratings)
+    ItemSimilarityMatrixBuilder(min_overlap=10, min_sim=0.0).build(all_ratings, save=False)
 
 
 def normalize(x):

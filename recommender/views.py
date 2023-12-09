@@ -1,13 +1,13 @@
-from django.shortcuts import render
 from decimal import Decimal
 from math import sqrt
-from django.http import JsonResponse
 from productApi.models import *
-from recommender.models import Similarity
-from django.db.models import Avg, Count, Q
+from django.db.models import Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import operator
+from recommender.collaborativeFiltering.online_tasks import CustomItemKNN
+from recommender.ContentBased.online_tasks import ContentBasedRecs
+from recommender.FWLS.online_tasks.fwls import FeatureWeightedLinearStacking
 
 
 # Create your views here.
@@ -49,6 +49,7 @@ def jaccard(users, this_user, that_user):
 
 
 class Similar_users(APIView):
+
     def get(self, request, user_id, sim_method):
         min = request.GET.get('min', 10)
 
@@ -84,7 +85,7 @@ class Similar_users(APIView):
 
         data = {
             'user_id': user_id,
-            'anime_rated': len(users[user_id]),
+            # 'anime_rated': len(users[user_id]),
             'type': sim_method,
             'topn': topn,
             'similarity': topn,
@@ -93,34 +94,21 @@ class Similar_users(APIView):
         return Response(data)
 
 
-class OnlineCollaborateFiltering(APIView):
+class CollaborateFilteringRecs(APIView):
     def get(self, request, user_id):
-        active_user_items = UserRating.objects.filter(user_id=user_id).order_by('-rating')
-        if len(active_user_items) == 0:
-            return Response({})
-        anime_ids = {anime['anime_id_id']: anime['rating']
-                     for anime in active_user_items.values()}
-        user_mean = Decimal(sum(anime_ids.values()) / len(anime_ids))
-        candidate_items = Similarity.objects.filter(Q(source__in=anime_ids.keys())
-                                                    & ~Q(target__in=anime_ids.keys()))
-        candidate_items = candidate_items.order_by('-similarity')[:25]
-        recs = dict()
-        for candidate in candidate_items:
-            target = candidate.target
+        recs = CustomItemKNN().recommend_items(user_id)
+        return Response({user_id: recs})
 
-            pre = 0
-            sim_sum = 0
 
-            rated_items = [i for i in candidate_items if i.target == target][:15]
-            if len(rated_items) > 1:
-                for sim_item in rated_items:
-                    key = sim_item.source
-                    r = Decimal(anime_ids[int(key)] - user_mean)
-                    pre += sim_item.similarity * r
-                    sim_sum += sim_item.similarity
-                if sim_sum > 0:
-                    recs[target] = {'prediction': Decimal(user_mean) + pre / sim_sum,
-                                    'sim_items': [r.source for r in rated_items]}
+class ContentBasedRecommender(APIView):
+    def get(self, request, user_id):
+        recs = ContentBasedRecs().recommend_items(user_id=user_id)
+        return Response(recs)
 
-        sorted_items = sorted(recs.items(), key=lambda item: -float(item[1]['prediction']))[:10]
-        return Response(sorted_items)
+
+class FWLS(APIView):
+    def get(self, request, user_id):
+        recs = FeatureWeightedLinearStacking()
+        recs.set_save_path('recommender/FWLS/offline_tasks/')
+        recs = recs.recommend_items(user_id=user_id)
+        return Response(recs)

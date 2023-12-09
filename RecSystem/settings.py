@@ -86,7 +86,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'RecSystem.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -99,8 +98,12 @@ DATABASES = {
         'PASSWORD': env("POSTGRES_PASSWORD"),
         'HOST': '127.0.0.1',
         'PORT': '5432',
-    }
+    },
 }
+
+# Cassandra
+
+
 
 
 # Password validation
@@ -121,7 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -132,7 +134,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/

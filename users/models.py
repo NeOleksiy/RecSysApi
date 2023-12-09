@@ -9,7 +9,7 @@ class Gender(models.TextChoices):
 
 
 class User(AbstractUser):
-    user_id = models.IntegerField(primary_key=True, unique=True)
+    user_id = models.AutoField(primary_key=True, unique=True)
     user_name = models.CharField(max_length=32, default='Radislav')
     email = models.EmailField(max_length=64, default='nikto@gmail.com')
 
