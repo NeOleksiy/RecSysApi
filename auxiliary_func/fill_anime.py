@@ -9,8 +9,8 @@ from productApi.models import *
 import pandas as pd
 from tqdm import tqdm
 
-anime = pd.read_csv('../anime.csv')
-rating = pd.read_csv('../rating.csv')
+anime = pd.read_csv('./anime.csv')
+rating = pd.read_csv('./rating.csv')
 
 anime['genre'] = anime['genre'].fillna('None')
 anime['rating'] = anime['rating'].fillna(0)
@@ -28,6 +28,8 @@ products = [
     )
     for row in anime.index
 ]
+
+Anime.objects.bulk_create(products)
 
 for i, g in tqdm(enumerate(products)):
     g.save()

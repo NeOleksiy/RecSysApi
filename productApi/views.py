@@ -24,9 +24,10 @@ class AnimeViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     @action(detail=False, methods=['get'])
-    def genres_filter(self, request, **kwargs):
-        genres = Genre.objects.filter(genre=self.kwargs['genres'])
-        filtering_anime = Anime.objects.filter(genres__in=genres).distinct()
+    def genres_filter(self, request):
+        genre_names = request.GET.getlist('genre_names[]')
+        genres = Genre.objects.filter(genre=genre_names)
+        filtering_anime = Anime.objects.filter(genre__in=genres).distinct()
         serialized_anime = AnimeSerializer(data=filtering_anime)
         if serialized_anime.is_valid():
             return Response({genres.values()['genre']: serialized_anime})

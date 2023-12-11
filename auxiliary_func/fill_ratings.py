@@ -42,8 +42,6 @@ def fill_ratings():
             continue
 
 
-
-
-# UserRating.objects.bulk_create(products)
+fill_users()
 fill_ratings()
 print(UserRating.objects.first())

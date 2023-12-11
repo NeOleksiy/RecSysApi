@@ -98,7 +98,7 @@ DATABASES = {
         'USER': env("POSTGRES_USER"),
         'PASSWORD': env("POSTGRES_PASSWORD"),
         'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'PORT': env('POSTGRES_PORT'),
     },
 }
 
@@ -114,15 +114,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20
 }
 
-# SWAGGER_SETTINGS = {
-#     'SECURITY_DEFINITIONS': {
-#         'api_key': {
-#             'type': 'apiKey',
-#             'in': 'header',
-#             'name': 'Authorization'
-#         }
-#     },
-# }
 
 
 
