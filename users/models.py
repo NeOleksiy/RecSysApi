@@ -9,8 +9,7 @@ class Gender(models.TextChoices):
 
 
 class User(AbstractUser):
-    user_id = models.AutoField(primary_key=True, unique=True)
-    user_name = models.CharField(max_length=32, default='Radislav')
+    user_id = models.AutoField(primary_key=True, unique=True,)
     email = models.EmailField(max_length=64, default='nikto@gmail.com')
 
     def __str__(self):
@@ -23,4 +22,4 @@ class UserAttribute(models.Model):
     gender = models.CharField(max_length=1, choices=Gender.choices, default='M')
 
     def __str__(self):
-        return self.user.user_name
+        return self.user.username

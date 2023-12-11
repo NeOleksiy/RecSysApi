@@ -26,7 +26,7 @@ class FeatureWeightedLinearStacking:
     @staticmethod
     def fun2(user_id):
         count = UserRating.objects.filter(user_id=user_id).count()
-        if count > 2.0:
+        if count > 3.0:
             return Decimal(1.0)
         return Decimal(0.0)
 
@@ -34,7 +34,6 @@ class FeatureWeightedLinearStacking:
     def set_save_path(self, save_path):
         with open(save_path + 'fwls_parameters.data', 'rb') as ub_file:
             parameters = pickle.load(ub_file)
-            self.intercept = Decimal(parameters['intercept'])
             self.wcb1 = Decimal(parameters['cb1'])
             self.wcb2 = Decimal(parameters['cb2'])
             self.wcf1 = Decimal(parameters['cb1'])
@@ -102,5 +101,4 @@ class FeatureWeightedLinearStacking:
              self.wcb2 * self.fun2(user_id) * p_cb +
              self.wcf1 * self.fun1() * p_cf +
              self.wcf2 * self.fun2(user_id) * p_cf)
-        print(self.wcb1, self.wcb2, self.wcf1, self.wcf2)
         return p + self.intercept

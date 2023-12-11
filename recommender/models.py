@@ -1,6 +1,4 @@
 from django.db import models
-from cassandra.cqlengine import columns
-from cassandra.cqlengine.models import Model
 
 
 # Create your models here.
@@ -25,7 +23,6 @@ class TfIdfMatrix(models.Model):
     tfidf_sim = models.DecimalField(max_digits=8, decimal_places=7)
 
     class Meta:
-
         db_table = 'tf-idf-matrix'
 
     def __str__(self):

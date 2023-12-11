@@ -1,10 +1,16 @@
 from decimal import Decimal
 from math import sqrt
-from productApi.models import *
-from django.db.models import Count
+
+from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from productApi.models import Anime
+from django.db.models import Count, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from productApi.serializers import AnimeSerializer
 import operator
+from rest_framework import viewsets
 from recommender.collaborativeFiltering.online_tasks import CustomItemKNN
 from recommender.ContentBased.online_tasks import ContentBasedRecs
 from recommender.FWLS.online_tasks.fwls import FeatureWeightedLinearStacking
@@ -48,67 +54,71 @@ def jaccard(users, this_user, that_user):
         return 0
 
 
-class Similar_users(APIView):
-
-    def get(self, request, user_id, sim_method):
-        min = request.GET.get('min', 10)
-
-        ratings = UserRating.objects.filter(user_id=user_id)
-        sim_users = UserRating.objects.filter(anime_id__in=ratings.values('anime_id')) \
-            .values('user_id').annotate(intersect=Count('user_id')).filter(intersect__gt=min)
-
-        dataset = UserRating.objects.filter(user_id__in=sim_users.values('user_id'))
-
-        users = {u['user_id']: {} for u in sim_users}
-
-        for row in dataset.values():
-            user = row['user_id_id']
-            anime = row['anime_id_id']
-            rating = row['rating']
-            if user in users.keys():
-                users[user][anime] = rating
-        similarity = dict()
-        switcher = {
-            'jaccard': jaccard,
-            'pearson': pearson,
-
-        }
-
-        for user in sim_users:
-
-            func = switcher.get(sim_method, lambda: "nothing")
-            s = func(users, user_id, user['user_id'])
-
-            if s > 0.2:
-                similarity[user['user_id']] = round(s, 2)
-        topn = sorted(similarity.items(), key=operator.itemgetter(1), reverse=True)[:10]
-
-        data = {
-            'user_id': user_id,
-            # 'anime_rated': len(users[user_id]),
-            'type': sim_method,
-            'topn': topn,
-            'similarity': topn,
-        }
-
-        return Response(data)
-
-
 class CollaborateFilteringRecs(APIView):
-    def get(self, request, user_id):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = request.user.user_id
         recs = CustomItemKNN().recommend_items(user_id)
-        return Response({user_id: recs})
+        if len(recs) > 0:
+            animies = []
+            for anim in recs:
+                anime_i = int(anim[0])
+                anime = Anime.objects.get(anime_id=anime_i)
+                anime_name = anime.name
+                animies.append({anime_i: anime_name})
+            return Response(animies)
+        else:
+            content = {'Ошибка рекомендаций': 'Недостаточное кол-во оценёных аниме'}
+            return Response(content, status.HTTP_412_PRECONDITION_FAILED)
 
 
 class ContentBasedRecommender(APIView):
-    def get(self, request, user_id):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = request.user.user_id
         recs = ContentBasedRecs().recommend_items(user_id=user_id)
-        return Response(recs)
+        if len(recs) > 0:
+            animies = []
+            for anim in recs:
+                anime_i = int(anim[0])
+                anime=Anime.objects.get(anime_id=anime_i)
+                anime_name = anime.name
+                animies.append({anime_i: anime_name})
+            return Response(animies)
+        else:
+            content = {'Ошибка рекомендаций': 'Недостаточное кол-во оценёных аниме'}
+            return Response(content, status.HTTP_412_PRECONDITION_FAILED)
 
 
 class FWLS(APIView):
-    def get(self, request, user_id):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = request.user.user_id
         recs = FeatureWeightedLinearStacking()
         recs.set_save_path('recommender/FWLS/offline_tasks/')
         recs = recs.recommend_items(user_id=user_id)
-        return Response(recs)
+        if len(recs) > 0:
+            animies = []
+            for anim in recs:
+                anime_i = int(anim[0])
+                anime = Anime.objects.get(anime_id=anime_i)
+                anime_name = anime.name
+                animies.append({anime_i: anime_name})
+            return Response(animies)
+        else:
+            content = {'Ошибка рекомендаций': 'Недостаточное кол-во оценёных аниме'}
+            return Response(content, status.HTTP_412_PRECONDITION_FAILED)
+
+
+class Popularity(viewsets.ViewSet):
+    def __init__(self, n_recs=10, **kwargs):
+        super().__init__(**kwargs)
+        self.n_recs = n_recs
+
+    def list(self, request):
+        queryset = Anime.objects.all().order_by("-members")[:self.n_recs]
+        serializer = AnimeSerializer(queryset, many=True)
+        return Response(serializer.data)

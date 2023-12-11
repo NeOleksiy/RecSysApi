@@ -49,7 +49,7 @@ class ContentBasedRecs:
             pre = 0
             sim_sum = 0
 
-            rated_items = [i for i in sims if i.col_id == target]#[:10]
+            rated_items = [i for i in sims if i.col_id == target]
 
             if len(rated_items) > 0:
 
@@ -59,11 +59,9 @@ class ContentBasedRecs:
                     sim_sum += sim_item.tfidf_sim
 
                 if sim_sum > 0:
-                    # try:
-                    #     target = Anime.objects.get(anime_id=target).name
-                    # except Anime.DoesNotExist:
-                    #     continue
-                    recs[target] = {'prediction': Decimal(user_mean) + pre / sim_sum,
+
+                    recs[target] = {
+                                    'prediction': Decimal(user_mean) + pre / sim_sum,
                                     'sim_items': [r.row_id for r in rated_items]}
 
         return sorted(recs.items(), key=lambda item: -float(item[1]['prediction']))[:num]

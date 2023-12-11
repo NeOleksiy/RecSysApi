@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "RecSystem.settings")
 
@@ -10,11 +9,9 @@ django.setup()
 
 import pickle
 import logging
-
 import pandas as pd
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from recommender.FWLS.online_tasks.fwls import FeatureWeightedLinearStacking
 from productApi.models import UserRating, Anime
 from recommender.ContentBased.offline_tasks import Tf_IdfSimilarityBuilder
@@ -37,7 +34,7 @@ class FWLSCalculator(object):
         self.test_data = None
         self.rating_count = None
         self.cb = ContentBasedRecs()
-        self.cf = CustomItemKNN()
+        self.cf = CustomItemKNN(neighborhood_size=6)
         self.fwls = FeatureWeightedLinearStacking()
         self.data_size = data_size
 
@@ -46,8 +43,19 @@ class FWLSCalculator(object):
         columns = ['user_id', 'anime_id', 'rating']
         ratings_data = UserRating.objects.all().values(*columns)[:self.data_size]
         df = pd.DataFrame.from_records(ratings_data, columns=columns)
+
         # если аниме просмотренно, то оценка пользователя будет равна средней оценки аниме
-        # df = df.apply(lambda x: x['rating'] if x['rating'] != -1 else Anime.objects.get(anime_id=x['anime_id']).rating)
+        def replace_rating(row):
+            anime_id = row['anime_id']
+            rating = row['rating']
+
+            if rating == -1:
+                anime = Anime.objects.get(anime_id=anime_id)
+                rating = anime.rating
+
+            return rating
+
+        df['rating'] = df.apply(replace_rating, axis=1)
         self.train_data, self.test_data = train_test_split(df, test_size=0.2)
         self.logger.debug("training data loaded {}".format(len(ratings_data)))
 
@@ -110,21 +118,18 @@ class FWLSCalculator(object):
             ItemSimilarityMatrixBuilder().build(ratings)
             Tf_IdfSimilarityBuilder().build(genres)
 
-        regr = linear_model.LinearRegression(fit_intercept=True,
-                                             n_jobs=-1,positive=True)
-        scaler = StandardScaler(with_mean=False)
-        self.train_data[['cb1', 'cb2', 'cf1', 'cf2']] = scaler.fit_transform(
-            self.train_data[['cb1', 'cb2', 'cf1', 'cf2']])
+        regr = linear_model.LinearRegression(n_jobs=-1, positive=True)
+
         regr.fit(self.train_data[['cb1', 'cb2', 'cf1', 'cf2']], self.train_data['rating'])
-        normalized_weights = (regr.coef_ - np.mean(regr.coef_)) / np.std(regr.coef_)
-        normalized_intercept = regr.intercept_ - np.sum(normalized_weights * scaler.mean_)
-        self.logger.info(regr.coef_)
+
+        normalized_weights = regr.coef_
+        self.logger.info(normalized_weights)
 
         result = {'cb1': normalized_weights[0],
                   'cb2': normalized_weights[1],
                   'cf1': normalized_weights[2],
                   'cf2': normalized_weights[3],
-                  'intercept': normalized_intercept}
+                  }
         self.logger.debug(result)
         self.logger.debug(self.train_data.iloc[100])
         ensure_dir(self.save_path)
@@ -137,10 +142,6 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
     logger = logging.getLogger('Get started calculating FWLS weights')
     logger.info("[BEGIN] Calculating Feature Weighted Linear Stacking...")
-
-    # if not os.path.exists("./models/lda/model.lda"):
-    #     logger.error("lda model should be done first. please run the lda_model_calculator.py script")
-    #     exit()
 
     fwls = FWLSCalculator(data_size=1000, save_path='./')
     fwls.get_real_training_data()

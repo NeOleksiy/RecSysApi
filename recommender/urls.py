@@ -1,10 +1,10 @@
 from django.urls import path
-from recommender.views import Similar_users, CollaborateFilteringRecs, ContentBasedRecommender, FWLS
+from recommender.views import CollaborateFilteringRecs, ContentBasedRecommender, FWLS, Popularity
 
 urlpatterns = [
-    path('similar_recs/<int:user_id>/<str:sim_method>/', Similar_users.as_view(), name='Similar Users'),
-    path('collaborate_filtering/<int:user_id>/', CollaborateFilteringRecs.as_view(),
+    path('collaborate_filtering/', CollaborateFilteringRecs.as_view(),
          name='Online Collaborate Filtering'),
-    path('content_based/<int:user_id>/', ContentBasedRecommender.as_view(), name='Content Based Recommends'),
-    path('fwls/<int:user_id>/', FWLS.as_view(), name='FWLS')
+    path('content_based/', ContentBasedRecommender.as_view(), name='Content Based Recommends'),
+    path('fwls/', FWLS.as_view(), name='FWLS'),
+    path('popular/', Popularity.as_view({'get': 'list'}), name='Popular content')
 ]

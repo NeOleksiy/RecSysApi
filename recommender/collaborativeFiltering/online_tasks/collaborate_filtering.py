@@ -15,7 +15,7 @@ from productApi.models import UserRating, Anime
 
 
 class CustomItemKNN:
-    def __init__(self, similarity_n=100, neighborhood_size=15, rec_item_n=10, min_sim=0.0):
+    def __init__(self, similarity_n=100, neighborhood_size=10, rec_item_n=10, min_sim=0.0):
         self.similarity_n = similarity_n  # Кол-во схожих аниме для оценённых пользователем аниме
         self.neighborhood_size = neighborhood_size  # Кол-во соседей каждому аниме
         self.rec_item_n = rec_item_n  # Кол-во рекомендаций (до rec_item_n)
@@ -48,7 +48,7 @@ class CustomItemKNN:
             pre = 0
             sim_sum = 0
             # Отбор аниме по сходству методом top N
-            rated_items = [i for i in candidate_items if i.target == target][:10]
+            rated_items = [i for i in candidate_items if i.target == target][:self.neighborhood_size]
             if len(rated_items) > 1:
                 for sim_item in rated_items:
                     key = sim_item.source

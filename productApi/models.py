@@ -56,3 +56,6 @@ class Cluster(models.Model):
     def __str__(self):
         return "User {} in cluster {}".format(self.user_id, self.cluster_id)
 
+
+
+
