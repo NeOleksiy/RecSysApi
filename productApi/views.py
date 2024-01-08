@@ -1,13 +1,11 @@
-from django.shortcuts import render
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework import viewsets
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
-from rest_framework.response import Response
 
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from productApi.models import Anime, Genre
 from productApi.serializers import AnimeSerializer
-from users.models import User
-from users.serializers import UserSerializer
 
 
 # Create your views here.
@@ -23,16 +21,24 @@ class AnimeViewSet(viewsets.ModelViewSet):
             permission_classes = [IsAdminUser]
         return [permission() for permission in permission_classes]
 
-    @action(detail=False, methods=['get'])
-    def genres_filter(self, request):
-        genre_names = request.GET.getlist('genre_names[]')
-        genres = Genre.objects.filter(genre=genre_names)
-        filtering_anime = Anime.objects.filter(genre__in=genres).distinct()
-        serialized_anime = AnimeSerializer(data=filtering_anime)
-        if serialized_anime.is_valid():
-            return Response({genres.values()['genre']: serialized_anime})
-        else:
-            return Response(serialized_anime.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
 
+class GenresFiltering(ListAPIView):
+    queryset = Anime.objects.all()
+    serializer_class = AnimeSerializer
+    permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'genre': openapi.Schema(type=openapi.TYPE_STRING),
+            'genres': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
+        }
+    ))
+    def get_queryset(self):
+        genre_name = self.request.data.get('genre_name')
+        print(genre_name)
+        if genre_name is None:
+            return Anime.objects.all()
+        genre = Genre.objects.get(genre=genre_name)
+        filtering_anime = Anime.objects.filter(genre=genre).distinct()
+        return filtering_anime
